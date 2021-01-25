@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.7.0;
+pragma experimental ABIEncoderV2;
 
 import "../Interface/IBerry.sol";
 
@@ -188,4 +189,170 @@ contract UsingBerry {
         if (_value > 0) return (true, _value, _time);
         return (false, 0, 0);
     }
+
+    /**
+     * @return Returns the current reward amount.
+        TODO remove once https://github.com/proxy-io/TellorCore/issues/109 is implemented and deployed.
+     */
+    function currentReward() external view returns (uint256) {
+        uint256 rewardAccumulated;
+        if (berry.getUintVar(keccak256("height")) > 172800) {
+            rewardAccumulated = 0;
+        } else {
+            rewardAccumulated = 61728395061728390000 / (berry.getUintVar(keccak256("height")) / 43200 + 1);
+        }
+
+        uint256 tip = berry.getUintVar(keccak256("currentTotalTips"));
+        return (rewardAccumulated + tip) / 5; // each miner
+    }
+
+    struct value {
+        uint256 timestamp;
+        uint256 value;
+    }
+
+    /**
+     * @param requestID is the ID for which the function returns the values for.
+     * @param count is the number of last values to return.
+     * @return Returns the last N values for a request ID.
+     */
+    function getLastNewValues(uint256 requestID, uint256 count)
+        external
+        view
+        returns (value[] memory)
+    {
+        uint256 totalCount = berry.getNewValueCountbyRequestId(requestID);
+        if (count > totalCount) {
+            count = totalCount;
+        }
+        value[] memory values = new value[](count);
+        for (uint256 i = 0; i < count; i++) {
+            uint256 ts = berry.getTimestampbyRequestIDandIndex(
+                requestID,
+                totalCount - i - 1
+            );
+            uint256 v = berry.retrieveData(requestID, ts);
+            values[i] = value({timestamp: ts, value: v});
+        }
+
+        return values;
+    }
+
+    /**
+     * @return Returns the contract owner that can do things at will.
+     */
+    function _deity() external view returns (address) {
+        return berry.getAddressVars(keccak256("_deity"));
+    }
+
+    /**
+     * @return Returns the contract owner address.
+     */
+    function _owner() external view returns (address) {
+        return berry.getAddressVars(keccak256("_owner"));
+    }
+
+    /**
+     * @return Returns the contract pending owner.
+     */
+    function pending_owner() external view returns (address) {
+        return berry.getAddressVars(keccak256("pending_owner"));
+    }
+
+    /**
+     * @return Returns the contract address that executes all proxy calls.
+     */
+    function berryContract() external view returns (address) {
+        return berry.getAddressVars(keccak256("berryContract"));
+    }
+
+    /**
+     * @param requestID is the ID for which the function returns the total tips.
+     * @return Returns the current tips for a give request ID.
+     */
+    function totalTip(uint256 requestID) external view returns (uint256) {
+        return berry.getRequestUintVars(requestID, keccak256("totalTip"));
+    }
+
+    /**
+     * @return Returns the getUintVar variable named after the function name.
+     * This variable tracks the last time when a value was submitted.
+     */
+    function timeOfLastNewValue() external view returns (uint256) {
+        return berry.getUintVar(keccak256("timeOfLastNewValue"));
+    }
+
+    /**
+     * @return Returns the getUintVar variable named after the function name.
+     * This variable tracks the total number of requests from user thorugh the addTip function.
+     */
+    function requestCount() external view returns (uint256) {
+        return berry.getUintVar(keccak256("requestCount"));
+    }
+
+    /**
+     * @return Returns the getUintVar variable named after the function name.
+     * This variable tracks the current block difficulty.
+     *
+     */
+    function difficulty() external view returns (uint256) {
+        return berry.getUintVar(keccak256("difficulty"));
+    }
+
+    /**
+     * @return Returns the getUintVar variable named after the function name.
+     * This variable is used to calculate the block difficulty based on
+     * the time diff since the last oracle block.
+     */
+    function timeTarget() external view returns (uint256) {
+        return berry.getUintVar(keccak256("timeTarget"));
+    }
+
+    /**
+     * @return Returns the getUintVar variable named after the function name.
+     * This variable tracks the highest api/timestamp PayoutPool.
+     */
+    function currentTotalTips() external view returns (uint256) {
+        return berry.getUintVar(keccak256("currentTotalTips"));
+    }
+
+    /**
+     * @return Returns the getUintVar variable named after the function name.
+     * This variable tracks the number of miners who have mined this value so far.
+     */
+    function slotProgress() external view returns (uint256) {
+        return berry.getUintVar(keccak256("slotProgress"));
+    }
+
+    /**
+     * @return Returns the getUintVar variable named after the function name.
+     * This variable tracks the cost to dispute a mined value.
+     */
+    function disputeFee() external view returns (uint256) {
+        return berry.getUintVar(keccak256("disputeFee"));
+    }
+
+    /**
+     * @return Returns the getUintVar variable named after the function name.
+     */
+    function disputeCount() external view returns (uint256) {
+        return berry.getUintVar(keccak256("disputeCount"));
+    }
+
+    /**
+     * @return Returns the getUintVar variable named after the function name.
+     * This variable tracks stake amount required to become a miner.
+     */
+    function stakeAmount() external view returns (uint256) {
+        return berry.getUintVar(keccak256("stakeAmount"));
+    }
+
+    /**
+     * @return Returns the getUintVar variable named after the function name.
+     * This variable tracks the number of parties currently staked.
+     */
+    function stakerCount() external view returns (uint256) {
+        return berry.getUintVar(keccak256("stakerCount"));
+    }
+
 }
